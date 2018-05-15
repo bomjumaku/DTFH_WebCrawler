@@ -1,6 +1,8 @@
 from urllib.request import urlopen as uReq
 from bs4 import BeautifulSoup as soup
 import os
+from tqdm import tqdm
+import requests
 
 my_url = 'http://www.duncantrussell.com/episodes/'
 base_url = 'http://www.duncantrussell.com' # this is used to generate links with concatenation later on.
@@ -57,7 +59,19 @@ print("Opening " + episode_info + " to retrieve audio file")
 with uReq(episode_info) as connection:
     episode_html = connection.read()
 
-mp3 = episode_html.find("div", {"class":"sqs-audio-embed"})
+episode_soup = soup(episode_html,"html.parser")
+mp3_chunk = episode_soup.find("div", {"class": "sqs-audio-embed"})
+mp3=mp3_chunk["data-url"]
+
+
+response = requests.get(mp3, stream=True)
+
+with open("DTFH/TEST", "wb") as handle:
+    for data in tqdm(response.iter_content()):
+        handle.write(data)
+
+print("Download Finished!")
+
 # print(episode_html)
 # for each in episode_list:
 #     print("Opening connection to:  ", base_url + each.a["href"])

@@ -10,7 +10,8 @@ target_url = 'http://www.duncantrussell.com/episodes/'
 base_url = 'http://www.duncantrussell.com'
 ###########################################################################################
 # This function downloads one episode with metadata
-#TODO: download image, episode information
+# TODO: download image, episode information
+###########################################################################################
 def download(url):
     print(url)
     with uReq(url) as tar_connection:
@@ -30,16 +31,15 @@ def download(url):
             handle.write(data)
 
     print(epName + " successfully downloaded!")
-
-#####################################################################
+###########################################################################################
 # generating README
 ###########################################################################################
 with open("README.txt", "w+") as f:
     f.write("This is a programming project by David Fentz. \n")
-    f.write("The purpose is to automatically download all episodes of the DTFH.\n")
+    f.write("The purpose is to automatically download all episodes of the DTFH podcast.\n")
     f.write("The program will create THIS README file along with a folder for all of the episodes"
         "in the directory from which it is run.\n")
-    f.write("\n \n Follow the project at ")
+    f.write("\n \n Follow the project at https://github.com/bomjumaku/DTFH_WebCrawler")
 
 ###########################################################################################
 # Creating folder for files
@@ -50,15 +50,16 @@ else:
     os.makedirs("DTFH")
 ###########################################################################################
 # Initializing variables
+###########################################################################################
 episode_list=[]
 next_page=target_url
 count =1
-# Loading links for all episodes
 ###########################################################################################
+# Loading links for all episodes
 # TODO: Make sure that each episode is unique before downloading it!
+###########################################################################################
 while next_page is not None:
     try:
-        print(uReq(next_page).info)
         with uReq(next_page) as connection:
             page_html = connection.read()
         page_soup=soup(page_html,"html.parser")
@@ -74,6 +75,7 @@ while next_page is not None:
         count = count + 1
         time.sleep(10)
 
+    # Handling scenario where server complains about request rate.
     except urllib.error.HTTPError as err:
         if err.code==429:
             print("Pausing for server")
@@ -82,10 +84,13 @@ while next_page is not None:
             raise
 
 print("We found ",str(len(episode_list))," episode links after ", count, " iterations!")
+########################################################################################
 
-# TODO: fix this loop here
+url_list=[]
 for each in episode_list: # Is this causing issues?
-    each= base_url + each.a["href"]
+    url_list.append( base_url + each.a["href"])
+for each in url_list:
+    download(each)
 #########################################################################################
 
 #########################################################################################

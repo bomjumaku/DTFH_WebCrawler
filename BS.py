@@ -1,4 +1,5 @@
 from urllib.request import urlopen as uReq
+import urllib
 from bs4 import BeautifulSoup as soup
 import os
 import time
@@ -17,7 +18,7 @@ def download(url):
     tar_soup=soup(tar_html,"html.parser")
 
     title= tar_soup.find("meta",{"property":"og:title"})
-    print("Downloading " + title["content"])
+    print("Downloading \"" + title["content"]+"\"")
     epName="DTFH/"+title["content"]+".mp3"
 
     mp3_path = tar_soup.find("div", {"class": "sqs-audio-embed"})
@@ -38,6 +39,8 @@ with open("README.txt", "w+") as f:
     f.write("The purpose is to automatically download all episodes of the DTFH.\n")
     f.write("The program will create THIS README file along with a folder for all of the episodes"
         "in the directory from which it is run.\n")
+    f.write("\n \n Follow the project at ")
+
 ###########################################################################################
 # Creating folder for files
 ###########################################################################################
@@ -52,41 +55,39 @@ next_page=target_url
 count =1
 # Loading links for all episodes
 ###########################################################################################
-# TODO: Catch the exception for Too Many Requests and handle it with a longer wait then retry
-# while next_page is not None:
-#     with uReq(next_page) as connection:
-#         page_html = connection.read()
-#     page_soup=soup(page_html,"html.parser")
-#
-#     episode_list = episode_list + page_soup.findAll("p", {"class": "listen-link"})
-#     print("After page", count,",",str(len(episode_list)) + " episodes were found.")
-#     next_link = page_soup.find("a", {"rel": "next"}) # need an if-not-null block here
-#     if next_link is not None:
-#         next_page = base_url + next_link.get('href')
-#         print("Next page is ", next_page)
-#     else:
-#         next_page=None
-#
-#     count = count + 1
-#     time.sleep(15)
+# TODO: Make sure that each episode is unique before downloading it!
+while next_page is not None:
+    try:
+        print(uReq(next_page).info)
+        with uReq(next_page) as connection:
+            page_html = connection.read()
+        page_soup=soup(page_html,"html.parser")
 
-# print("We found ",str(len(episode_list))," episode links after ", count, " iterations!")
+        episode_list = episode_list + page_soup.findAll("p", {"class": "listen-link"})
+        print("After "+ str(count) + " page(s), " + str(len(episode_list)) + " episodes were found.")
+        next_link = page_soup.find("a", {"rel": "next"}) # need an if-not-null block here
+        if next_link is not None:
+            next_page = base_url + next_link.get('href')
+        else:
+            next_page=None
 
-# for each in episode_list: # Is this causing issues?
-#     each= base_url + each.a["href"]
+        count = count + 1
+        time.sleep(10)
+
+    except urllib.error.HTTPError as err:
+        if err.code==429:
+            print("Pausing for server")
+            time.sleep(20)
+        else:
+            raise
+
+print("We found ",str(len(episode_list))," episode links after ", count, " iterations!")
+
+# TODO: fix this loop here
+for each in episode_list: # Is this causing issues?
+    each= base_url + each.a["href"]
 #########################################################################################
-# Test code for developing the download function
-with uReq(next_page) as connection:
-    page_html = connection.read()
-page_soup=soup(page_html,"html.parser")
 
-episode_list = episode_list + page_soup.findAll("p", {"class": "listen-link"})
-print("After page", count,",",str(len(episode_list)) + " episodes were found.")
-
-target_ep= base_url + episode_list[0].a["href"]
-
-#########################################################################################
-download(target_ep)
 #########################################################################################
 
 
